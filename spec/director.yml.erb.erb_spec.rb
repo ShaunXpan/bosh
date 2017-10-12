@@ -15,10 +15,6 @@ describe 'director.yml.erb.erb' do
           }
         }
       },
-      'ntp' => [
-        '0.north-america.pool.ntp.org',
-        '1.north-america.pool.ntp.org',
-      ],
       'compiled_package_cache' => {},
       'blobstore' => {
         'address' => '10.10.0.7',
@@ -463,17 +459,6 @@ describe 'director.yml.erb.erb' do
       it 'configures agent env correctly' do
         expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
         expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
-      end
-    end
-
-    context 'when ntp is provided' do
-      before do
-        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
-        merged_manifest_properties['ntp'] = ['1.1.1.1', '2.2.2.2']
-      end
-
-      it 'configures the cpi correctly' do
-        expect(parsed_yaml['cloud']['properties']['agent']['ntp']).to eq(['1.1.1.1', '2.2.2.2'])
       end
     end
   end
