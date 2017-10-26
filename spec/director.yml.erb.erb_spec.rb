@@ -9,11 +9,14 @@ describe 'director.yml.erb.erb' do
   let(:merged_manifest_properties) do
     {
       'agent' => {
+        'blobstore' => {
+          'address' => 'external-address-10.10.0.7',
+        },
         'env' => {
           'bosh' => {
             'foo' => 'bar'
-          }
-        }
+          },
+        },
       },
       'compiled_package_cache' => {},
       'blobstore' => {
@@ -25,6 +28,9 @@ describe 'director.yml.erb.erb' do
           'password' => 'password'
         },
         'provider' => 'dav',
+        'ssl' => {
+          'ca_cert' => "blobstore-ca-cert",
+        },
       },
       'nats' => {
         'address' => '10.10.0.7',
@@ -93,6 +99,13 @@ describe 'director.yml.erb.erb' do
           expect(parsed_yaml['blobstore']['provider']).to eq('davcli')
           expect(parsed_yaml['blobstore']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
           expect(parsed_yaml['blobstore']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
+        end
+
+        it 'should configure the https endpoint' do
+          expect(parsed_yaml['blobstore']['options']['endpoint']).to eq('https://10.10.0.7:25251')
+          expect(parsed_yaml['blobstore']['options']['user']).to eq('user')
+          expect(parsed_yaml['blobstore']['options']['password']).to eq('password')
+          expect(parsed_yaml['blobstore']['options']['ca_cert']).to eq('blobstore-ca-cert')
         end
       end
 
@@ -438,11 +451,15 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'configures the cpi correctly with agent.env.bosh properties' do
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
+        expect(parsed_yaml['agent']['env']['bosh']).to include({'foo' => 'bar'})
       end
 
       it 'ignores non-supported agent.env properties' do
         expect(parsed_yaml['agent']['env']['abc']).to eq(nil)
+      end
+
+      it 'blobstore endpoints are updated with external ip' do
+        expect(parsed_yaml['agent']['env']['bosh']['blobstores'][0]['options']['endpoint']).to eq("https://external-address-10.10.0.7:25251")
       end
     end
 
@@ -458,7 +475,7 @@ describe 'director.yml.erb.erb' do
 
       it 'configures agent env correctly' do
         expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
+        expect(parsed_yaml['agent']['env']['bosh']).to include({'foo' => 'bar'})
       end
     end
   end

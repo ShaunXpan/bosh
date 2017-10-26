@@ -402,5 +402,52 @@ params['agent'] = {
   }
 }
 
+agent_blobstore_options =
+  case p('blobstore.provider')
+  when 's3'
+    mandatory = {
+      'bucket_name' => p('blobstore.bucket_name'),
+      'credentials_source' => p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static'),
+      'access_key_id' => p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil),
+      'secret_access_key' => p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil),
+      'region' => p(['agent.blobstore.s3_region', 'blobstore.s3_region'], nil),
+    }
+    optional = {
+      'port' =>  p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil),
+      'host' =>  p(['agent.blobstore.host', 'blobstore.host'], nil),
+      'use_ssl' =>  p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil),
+      'ssl_verify_peer' =>  p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil),
+      's3_signature_version' =>  p(['agent.blobstore.s3_signature_version', 'blobstore.s3_signature_version'], nil),
+      'server_side_encryption' =>  p(['agent.blobstore.server_side_encryption', 'blobstore.server_side_encryption'], nil),
+      'sse_kms_key_id' =>  p(['agent.blobstore.sse_kms_key_id', 'blobstore.sse_kms_key_id'], nil),
+    }.compact
+
+    mandatory.merge(optional)
+  when 'gcs'
+    mandatory = {
+      'bucket_name' => p('blobstore.bucket_name'),
+      'credentials_source' => p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static'),
+      'json_key' => p(['agent.blobstore.json_key', 'blobstore.json_key'], nil),
+    }
+    optional = {
+      'storage_class' => p(['agent.blobstore.storage_class', 'blobstore.storage_class'], nil),
+      'encryption_key' => p(['agent.blobstore.encryption_key', 'blobstore.encryption_key'], nil),
+    }.compact
+
+    mandatory.merge(optional)
+  when 'dav'
+    {
+      'endpoint' => "https://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}",
+      'user' => p('blobstore.agent.user'),
+      'password' => p('blobstore.agent.password'),
+      'ca_cert' => p('blobstore.ssl.ca_cert'),
+    }
+  end
+
+agent_blobstore = {'provider' => p('blobstore.provider'), 'options' => agent_blobstore_options }
+
+params['agent']['env']['bosh']['blobstores'] ||= []
+params['agent']['env']['bosh']['blobstores'] << agent_blobstore
+
 JSON.dump(params)
 %>

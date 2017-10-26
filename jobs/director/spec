@@ -334,7 +334,7 @@ properties:
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.ssl.ca_cert:
-    description: CA Cert for TLS communcation with blobstore  
+    description: CA Cert for TLS communcation with blobstore
 
   # Blobstore destination for backups
   director.backup_destination:
