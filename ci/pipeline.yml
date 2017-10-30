@@ -319,9 +319,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
-          trigger: true
         - get: bosh-agent
-          trigger: true
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -368,9 +366,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
-          trigger: true
         - get: bosh-agent
-          trigger: true
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -414,9 +410,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
-          trigger: true
         - get: bosh-agent
-          trigger: true
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
@@ -437,7 +431,6 @@ jobs:
   - name: load-tests-postgres
     public: true
     serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: load-tests-interval, trigger: true }
@@ -462,7 +455,6 @@ jobs:
   - name: legacy-load-tests-postgres
     public: true
     serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: load-tests-interval, trigger: true }
@@ -474,7 +466,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
+      tags: ["bosh-load-tests-2"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs
@@ -487,7 +479,6 @@ jobs:
   - name: load-tests-mysql
     public: true
     serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: load-tests-interval, trigger: true }
@@ -499,7 +490,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
+      tags: ["bosh-load-tests-3"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs
@@ -512,7 +503,6 @@ jobs:
   - name: legacy-load-tests-mysql
     public: true
     serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
     build_logs_to_retain: 250
     plan:
     - { get: load-tests-interval, trigger: true }
@@ -524,7 +514,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
+      tags: ["bosh-load-tests-4"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
         bosh-candidate-release: bosh-candidate-release-tarballs

@@ -18,6 +18,10 @@ describe 'director.yml.erb.erb' do
           },
         },
       },
+      'ntp' => [
+        '0.north-america.pool.ntp.org',
+        '1.north-america.pool.ntp.org',
+      ],
       'compiled_package_cache' => {},
       'blobstore' => {
         'address' => '10.10.0.7',
@@ -451,6 +455,22 @@ describe 'director.yml.erb.erb' do
       end
 
       it 'configures the cpi correctly with agent.env.bosh properties' do
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
+      end
+
+      it 'ignores non-supported agent.env properties' do
+        expect(parsed_yaml['agent']['env']['abc']).to eq(nil)
+      end
+    end
+
+    context 'when configured to use a cpi_job' do
+      before do
+        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
+        merged_manifest_properties['agent']['env']['bosh'] = {'foo' => 'bar'}
+        merged_manifest_properties['agent']['env']['abc'] = {'foo' => 'bar'}
+      end
+
+      it 'configures the cpi correctly with agent.env.bosh properties' do
         expect(parsed_yaml['agent']['env']['bosh']).to include({'foo' => 'bar'})
       end
 
@@ -460,6 +480,11 @@ describe 'director.yml.erb.erb' do
 
       it 'blobstore endpoints are updated with external ip' do
         expect(parsed_yaml['agent']['env']['bosh']['blobstores'][0]['options']['endpoint']).to eq("https://external-address-10.10.0.7:25251")
+      end
+
+      it 'configures agent env correctly' do
+        expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
       end
     end
 
