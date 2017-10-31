@@ -261,6 +261,10 @@ describe 'director.yml.erb.erb' do
             expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
             expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
           end
+
+          it 'should configure tls ca cert' do
+            expect(parsed_yaml['blobstore']['options']['ca_cert']).to eq('some-cert')
+          end
         end
       end
 
@@ -480,6 +484,11 @@ describe 'director.yml.erb.erb' do
 
       it 'blobstore endpoints are updated with external ip' do
         expect(parsed_yaml['agent']['env']['bosh']['blobstores'][0]['options']['endpoint']).to eq("https://external-address-10.10.0.7:25251")
+      end
+
+      it 'configures agent env correctly' do
+        expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
       end
 
       it 'configures agent env correctly' do
