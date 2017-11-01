@@ -8,16 +8,6 @@ require_relative './template_example_group'
 describe 'director.yml.erb.erb' do
   let(:merged_manifest_properties) do
     {
-      'agent' => {
-        'blobstore' => {
-          'address' => 'external-address-10.10.0.7',
-        },
-        'env' => {
-          'bosh' => {
-            'foo' => 'bar'
-          },
-        },
-      },
       'ntp' => [
         '0.north-america.pool.ntp.org',
         '1.north-america.pool.ntp.org',
@@ -32,9 +22,6 @@ describe 'director.yml.erb.erb' do
           'password' => 'password'
         },
         'provider' => 'dav',
-        'ssl' => {
-          'ca_cert' => "blobstore-ca-cert",
-        },
       },
       'nats' => {
         'address' => '10.10.0.7',
@@ -103,13 +90,6 @@ describe 'director.yml.erb.erb' do
           expect(parsed_yaml['blobstore']['provider']).to eq('davcli')
           expect(parsed_yaml['blobstore']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
           expect(parsed_yaml['blobstore']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
-        end
-
-        it 'should configure the https endpoint' do
-          expect(parsed_yaml['blobstore']['options']['endpoint']).to eq('https://10.10.0.7:25251')
-          expect(parsed_yaml['blobstore']['options']['user']).to eq('user')
-          expect(parsed_yaml['blobstore']['options']['password']).to eq('password')
-          expect(parsed_yaml['blobstore']['options']['ca_cert']).to eq('blobstore-ca-cert')
         end
       end
 
@@ -260,10 +240,6 @@ describe 'director.yml.erb.erb' do
 
             expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
             expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
-          end
-
-          it 'should configure tls ca cert' do
-            expect(parsed_yaml['blobstore']['options']['ca_cert']).to eq('some-cert')
           end
         end
       end
@@ -451,52 +427,6 @@ describe 'director.yml.erb.erb' do
       end
     end
 
-    context 'when agent env properties are provided' do
-      before do
-        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
-        merged_manifest_properties['agent']['env']['bosh'] = {'foo' => 'bar'}
-        merged_manifest_properties['agent']['env']['abc'] = {'foo' => 'bar'}
-      end
-
-      it 'configures the cpi correctly with agent.env.bosh properties' do
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
-      end
-
-      it 'ignores non-supported agent.env properties' do
-        expect(parsed_yaml['agent']['env']['abc']).to eq(nil)
-      end
-    end
-
-    context 'when configured to use a cpi_job' do
-      before do
-        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
-        merged_manifest_properties['agent']['env']['bosh'] = {'foo' => 'bar'}
-        merged_manifest_properties['agent']['env']['abc'] = {'foo' => 'bar'}
-      end
-
-      it 'configures the cpi correctly with agent.env.bosh properties' do
-        expect(parsed_yaml['agent']['env']['bosh']).to include({'foo' => 'bar'})
-      end
-
-      it 'ignores non-supported agent.env properties' do
-        expect(parsed_yaml['agent']['env']['abc']).to eq(nil)
-      end
-
-      it 'blobstore endpoints are updated with external ip' do
-        expect(parsed_yaml['agent']['env']['bosh']['blobstores'][0]['options']['endpoint']).to eq("https://external-address-10.10.0.7:25251")
-      end
-
-      it 'configures agent env correctly' do
-        expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
-      end
-
-      it 'configures agent env correctly' do
-        expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
-      end
-    end
-
     context 'when configured to use a cpi_job' do
       before do
         merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
@@ -506,10 +436,16 @@ describe 'director.yml.erb.erb' do
         expect(parsed_yaml['cloud']['provider']['name']).to eq('test-cpi')
         expect(parsed_yaml['cloud']['provider']['path']).to eq('/var/vcap/jobs/test-cpi/bin/cpi')
       end
+    end
 
-      it 'configures agent env correctly' do
-        expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
-        expect(parsed_yaml['agent']['env']['bosh']).to include({'foo' => 'bar'})
+    context 'when ntp is provided' do
+      before do
+        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
+        merged_manifest_properties['ntp'] = ['1.1.1.1', '2.2.2.2']
+      end
+
+      it 'configures the cpi correctly' do
+        expect(parsed_yaml['cloud']['properties']['agent']['ntp']).to eq(['1.1.1.1', '2.2.2.2'])
       end
     end
   end
