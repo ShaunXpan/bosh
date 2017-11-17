@@ -127,7 +127,7 @@ describe 'Links', type: :integration do
       expected_response_items = [
         {
           'name' => 'low-iops-persistent-disk-name',
-          'shared': false,
+          'shared' => false,
           'deployment' => 'simple',
           'instance_group' => 'foobar',
           'link_provider_definition' => {
@@ -135,7 +135,7 @@ describe 'Links', type: :integration do
             'name' => 'low-iops-persistent-disk-name'
           },
           'owner_object' => {
-            'type' => 'disk',
+            'type' => 'instance_group',
             'name' => 'foobar'
           },
           'content' => String,
@@ -143,7 +143,7 @@ describe 'Links', type: :integration do
         },
         {
           'name' => 'high-iops-persistent-disk-name',
-          'shared': false,
+          'shared' => false,
           'deployment' => 'simple',
           'instance_group' => 'foobar',
           'link_provider_definition' => {
@@ -151,7 +151,7 @@ describe 'Links', type: :integration do
             'name' => 'high-iops-persistent-disk-name'
           },
           'owner_object' => {
-            'type' => 'disk',
+            'type' => 'instance_group',
             'name' => 'foobar'
           },
           'content' => String,
@@ -166,8 +166,6 @@ describe 'Links', type: :integration do
 
         expect(response_item).to match(expected_response)
       end
-
-      expect(response_body[0]['link_provider_definition']['name']).to eq('original_provider_link_name')
     end
 
     context 'and a job in the same instance group provides a link with the same name' do
@@ -200,6 +198,49 @@ describe 'Links', type: :integration do
         response_body = JSON.parse(response.read_body)
         expect(response_body.count).to eq(2)
 
+        expected_response_items = [
+          {
+            'name' => 'db',
+            'shared' => false,
+            'deployment' => 'simple',
+            'instance_group' => 'foobar',
+            'link_provider_definition' => {
+              'type' => 'disk',
+              'name' => 'db'
+            },
+            'owner_object' => {
+              'type' => 'instance_group',
+              'name' => 'foobar'
+            },
+            'content' => String,
+            'id' => Integer
+          },
+          {
+            'name' => 'db',
+            'shared' => false,
+            'deployment' => 'simple',
+            'instance_group' => 'foobar',
+            'link_provider_definition' => {
+              'type' => 'db',
+              'name' => 'db'
+            },
+            'owner_object' => {
+              'type' => 'job',
+              'name' => 'database'
+            },
+            'content' => String,
+            'id' => Integer
+          }
+        ]
+
+        expected_response_items.each do |expected_response|
+          response_item = response_body.find do |response_item|
+            response_item['name'] == expected_response['name'] &&
+              response_item['link_provider_definition']['type'] == expected_response['link_provider_definition']['type']
+          end
+
+          expect(response_item).to match(expected_response)
+        end
       end
     end
   end
