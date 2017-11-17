@@ -68,23 +68,31 @@ Sequel.migration do
 
     links_to_migrate = {}
 
-    Struct.new('LinkKey', :deployment_id, :instance_group, :job, :link_name) unless defined?(Struct::LinkKey)
+    Struct.new('LinkKey', :deployment_id, :instance_group, :job, :link_name) unless defined?(Struct::LinkKey) # this only happens during integration tests, check this
     Struct.new('LinkDetail', :link_id, :content) unless defined?(Struct::LinkDetail)
 
     self[:instances].each do |instance|
-      spec_json = JSON.parse(instance[:spec_json] || '{}')
+      spec_json = JSON.parse(instance[:spec_json] || '{}') # spec_json is not guaranteed to be there, some instances spec can be empty string, or just busted in general, we should not probably fail the migration if json parse fails
       links = spec_json['links'] || {}
       links.each do |job_name, consumed_links|
-        consumed_links.each do |link_name, link_data|
-          if self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).all.count == 0
-            self[:link_consumers] << {
+        #  are we guaranteed that consumed links is not nil, or messed up? need to decide what to do
+        #  check if we can use count
+        consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
+
+        if consumer
+          consumer_id = consumer[:id]
+        else
+          consumer_id = self[:link_consumers].insert(
+            {
               deployment_id: instance[:deployment_id],
               instance_group: instance[:job],
               owner_object_name: job_name,
-              owner_object_type: 'Job'
+              owner_object_type: 'Job' # should this be in its own table?
             }
-          end
+          )
+        end
 
+        consumed_links.each do |link_name, link_data|
           link_key = Struct::LinkKey.new(instance[:deployment_id], instance[:job], job_name, link_name)
 
           link_details = links_to_migrate[link_key] || []
@@ -93,14 +101,11 @@ Sequel.migration do
           end
 
           unless link_detail
-            consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
-            raise "Could not find an appropriate consumer for this instance." unless consumer
-
             link_id = self[:links].insert(
               {
                 name: link_name,
                 link_provider_id: nil,
-                link_consumer_id: consumer[:id],
+                link_consumer_id: consumer_id,
                 link_content: link_data.to_json,
                 created_at: Time.now,
               }
